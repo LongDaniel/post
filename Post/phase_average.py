@@ -131,7 +131,7 @@ def phase_average(_folder, _phi, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     data[:,8] = uw_phase*((_U/_Ustar)**2)
     #save data
     return data
-def get_phi(folder, t, tis, tie, tii,_NPZ,_NPX):
+def get_phi(folder, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     #change working directory
     os.chdir(folder)
     print("current working directory is: {0}".format(os.getcwd()))
@@ -202,12 +202,12 @@ def get_phi(folder, t, tis, tie, tii,_NPZ,_NPX):
     data = np.zeros([_NPZ*48, 9])
     data[:,0] = x_phase
     data[:,1] = z_phase
-    data[:,2] = u_phase
-    data[:,3] = v_phase
-    data[:,4] = w_phase
-    data[:,5] = uu_phase
-    data[:,6] = vv_phase
-    data[:,7] = ww_phase
-    data[:,8] = -uw_phase
+    data[:,2] = u_phase*_U/_Ustar
+    data[:,3] = v_phase*_U/_Ustar
+    data[:,4] = w_phase*_U/_Ustar
+    data[:,5] = uu_phase*((_U/_Ustar)**2)
+    data[:,6] = vv_phase*((_U/_Ustar)**2)
+    data[:,7] = ww_phase*((_U/_Ustar)**2)
+    data[:,8] = -uw_phase*((_U/_Ustar)**2)
     #save data
     return data
