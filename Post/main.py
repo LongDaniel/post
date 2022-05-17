@@ -44,11 +44,11 @@ tii = 200
 nti = int((tie - tis) / tii + 1)
 NPX = 192
 NPY = 192
-NPZ = 65
-path  = 'd:\post'
+NPZ = 64
+path  = 'd:\post\Project'
 os.chdir(path)
 #delare working casename
-casenames = ["Pitch_test"]
+casenames = ["Pitch_Turbine"]
 unametags = ["U", "UI", "UI"]
 casename_s = 0
 casename_e = 1
@@ -63,12 +63,12 @@ for icase in range(casename_s, casename_e):
     #checked
     print(os.getcwd())
     print(len(globals()["{casenames[icase]}"]))    
-time = get_time(path+"./"+casenames[0],nturbine,T_wave)
-print(len(time))
-data = np.zeros((len(time),int(casename_e-casename_s+1)))
-data [:,0] = time
-for icase in range(casename_s, casename_e):
-    data[:, int(icase+1)] = globals()["{casenames[icase]}"]
+    time = get_time(path+"./"+casenames[icase],nturbine,T_wave)
+    print(len(time))
+    data = np.zeros((len(time),int(casename_e-casename_s+1)))
+    data [:,0] = time
+    for icase in range(casename_s, casename_e):
+        data[:, int(icase+1)] = globals()["{casenames[icase]}"]
 
 
 outputfolder = 'post_result/'
@@ -87,7 +87,7 @@ data2 = get_phi(path+foldername+'\POST_U_2D3_0002', 2, 10000, 15000, 200, NPZ, N
 data3 = get_phi(path+foldername+'\POST_U_2D3_0003', 3, 10000, 15000, 200, NPZ, NPX,U,U_star)
 data4 = get_phi(path+foldername+'\POST_U_2D3_0004', 4, 10000, 15000, 200, NPZ, NPX,U,U_star)
 #aveage data
-data = np.zeros([NPZ*48, 9])
+data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4
 
 os.chdir('d:\post')
@@ -95,9 +95,9 @@ outputfolder = 'post_result/'
 #create output folder named 'post_result' 
 if not os.path.exists(outputfolder):
     os.makedirs(outputfolder)
-f = open( outputfolder + "test_code.plt",'w')
+f = open('d:\post' + './'+ outputfolder + casenames[0]+ "phase_contour.plt",'w')
 f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/W*, UU/U*^2, VV/U*^2,\
-         WW/U*^2, UW/U*^2  \n")
+         WW/U*^2, UW/U*^2, tke_tm  \n")
 
 np.savetxt(f, data)
 f.close()
@@ -108,4 +108,10 @@ dat[:,1:4] = (get_mean_velocity(path+foldername,tis,tie,tii)*U)#/U_star
 dat[:,4] = get_mkeb_wt(path+foldername,NPZ)
 dat[:,5] = get_tau_sum(path+foldername,NPZ)
 dat[:,6] = get_um(path+foldername,NPZ)
+
+f1 = open( 'd:\post'+'./' + outputfolder + './' + casenames[0]+"phase_test_code.plt",'w')
+f1.write("VARIABLES = Z, <U>, <V>, <W>, mkeb_wt, tau_sum,um \n")
+         
+np.savetxt(f1, dat)
+f1.close()
 print("End process directory: {0}".format(os.getcwd()) )

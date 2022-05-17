@@ -59,6 +59,7 @@ def phase_average(folder, phi, t, tis, tie, tii):
     vv_phase = np.zeros([NPZ, 48])
     ww_phase = np.zeros([NPZ, 48])
     uw_phase = np.zeros([NPZ, 48])
+    tke_tm = np.zeros([NPZ, 48])
     nti = int((tie - tis) / tii + 1)
     for it in range (nti):
         ti = tis + tii * it
@@ -75,6 +76,7 @@ def phase_average(folder, phi, t, tis, tie, tii):
         u_phase = u_phase + u[:,67:115]
         v_phase = v_phase + v[:,67:115]
         w_phase = w_phase + w[:,67:115]
+        tke_tm = tke_tm + u[:,67:115]**2 + v[:,67:115]**2 + w[:,67:115]**2
         #uu_phase = uu_phase + u_phase**2
         #vv_phase = vv_phase +  v_phase**2
         #ww_phase =  ww_phase + w_phase**2
@@ -85,6 +87,8 @@ def phase_average(folder, phi, t, tis, tie, tii):
     u_phase = u_phase / int((tie - tis) / tii + 1)
     v_phase = v_phase / int((tie - tis) / tii + 1)
     w_phase = w_phase / int((tie - tis) / tii + 1)
+    tke_tm = tke_tm / int((tie - tis) / tii + 1)
+    tke_tm = tke_tm - u_phase**2 - v_phase**2 - w_phase**2
     #uu_phase = uu_phase / int((tie - tis) / tii + 1)
     #vv_phase = vv_phase / int((tie - tis) / tii + 1)
     #ww_phase = ww_phase / int((tie - tis) / tii + 1)
@@ -119,8 +123,9 @@ def phase_average(folder, phi, t, tis, tie, tii):
     vv_phase = vv_phase.reshape([NPZ*48]) 
     ww_phase = ww_phase.reshape([NPZ*48]) 
     uw_phase = uw_phase.reshape([NPZ*48]) 
+    tke_tm = tke_tm.reshape([NPZ*48])
     #store data into array
-    data = np.zeros([NPZ*48, 9])
+    data = np.zeros([NPZ*48, 10])
     data[:,0] = x_phase
     data[:,1] = z_phase
     data[:,2] = u_phase*U/U_star
@@ -130,6 +135,7 @@ def phase_average(folder, phi, t, tis, tie, tii):
     data[:,6] = vv_phase*((U/U_star)**2)
     data[:,7] = ww_phase*((U/U_star)**2)
     data[:,8] = uw_phase*((U/U_star)**2)
+    data[:,9] = tke_tm
     #save data
     return data
 def get_phi(folder, t, tis, tie, tii):
@@ -146,6 +152,7 @@ def get_phi(folder, t, tis, tie, tii):
     vv_phase = np.zeros([NPZ, 48])
     ww_phase = np.zeros([NPZ, 48])
     uw_phase = np.zeros([NPZ, 48])
+    tke_tm = np.zeros([NPZ, 48])
     nti = int((tie - tis) / tii + 1)
     for it in range (nti):
         ti = tis + tii * it
@@ -162,13 +169,15 @@ def get_phi(folder, t, tis, tie, tii):
         u_phase = u_phase + u[:,67:115]
         v_phase = v_phase + v[:,67:115]
         w_phase = w_phase + w[:,67:115]
-
+        tke_tm = tke_tm + (u[:,67:115]**2 + v[:,67:115]**2 + w[:,67:115]**2)
     #time average
     x_phase = x_phase / int((tie - tis) / tii + 1)
     z_phase = z_phase / int((tie - tis) / tii + 1)
     u_phase = u_phase / int((tie - tis) / tii + 1)
     v_phase = v_phase / int((tie - tis) / tii + 1)
     w_phase = w_phase / int((tie - tis) / tii + 1)
+    tke_tm = tke_tm / int((tie - tis) / tii + 1)
+    tke_tm = tke_tm - u_phase**2 - v_phase**2 - w_phase**2
 
     for it in range (nti):
         ti = tis + tii * it
@@ -199,8 +208,9 @@ def get_phi(folder, t, tis, tie, tii):
     vv_phase = vv_phase.reshape([NPZ*48]) - v_phase**2
     ww_phase = ww_phase.reshape([NPZ*48]) - w_phase**2
     uw_phase = uw_phase.reshape([NPZ*48]) - u_phase*w_phase
+    tke_tm = tke_tm.reshape([NPZ*48])
     #store data into array
-    data = np.zeros([NPZ*48, 9])
+    data = np.zeros([NPZ*48, 10])
     data[:,0] = x_phase
     data[:,1] = z_phase
     data[:,2] = u_phase
@@ -252,7 +262,7 @@ data2 = phase_average(path+'\PhaseAveragePhi0_0002', 0, 2, 0, 600, 3)
 data3 = phase_average(path+'\PhaseAveragePhi0_0003', 0, 3, 0, 600, 3)
 data4 = phase_average(path+'\PhaseAveragePhi0_0004', 0, 4, 0, 600, 3)
 #aveage data
-data = np.zeros([NPZ*48, 9])
+data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4
 os.chdir('d:\post')
 outputfolder = 'post_result/'
@@ -261,7 +271,7 @@ if not os.path.exists(outputfolder):
     os.makedirs(outputfolder)
 f = open( outputfolder + "phi0_sway.plt",'w')
 f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/U*, <U'U'>/U*^2, <V'V'>/U*^2,\
-         <W'W'>/U*^2, <-U'W'>/U*^2  \n")
+         <W'W'>/U*^2, <-U'W'>/U*^2 ,tke_tm \n")
 
 np.savetxt(f, data)
 f.close()
@@ -271,7 +281,7 @@ data2 = phase_average(path+'\PhaseAveragePhi1_0002', 1, 2, 0, 600, 1)
 data3 = phase_average(path+'\PhaseAveragePhi1_0003', 1, 3, 0, 600, 1)
 data4 = phase_average(path+'\PhaseAveragePhi1_0004', 1, 4, 0, 600, 1)
 #aveage data
-data = np.zeros([NPZ*48, 9])
+data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4) / 4
 
 os.chdir('d:\post')
@@ -281,7 +291,7 @@ if not os.path.exists(outputfolder):
     os.makedirs(outputfolder)
 f = open( outputfolder + "phi1_sway.plt",'w')
 f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/U*, <U'U'>/U*^2, <V'V'>/U*^2,\
-         <W'W'>/U*^2, <-U'W'>/U*^2  \n")
+         <W'W'>/U*^2, <-U'W'>/U*^2, tke_tm  \n")
 
 np.savetxt(f, data)
 f.close()
@@ -291,7 +301,7 @@ data2 = phase_average(path+'\PhaseAveragePhi2_0002', 2, 2, 1, 19, 1)
 data3 = phase_average(path+'\PhaseAveragePhi2_0003', 2, 3, 1, 19, 1)
 data4 = phase_average(path+'\PhaseAveragePhi2_0004', 2, 4, 1, 19, 1)
 #aveage data
-data = np.zeros([NPZ*48, 9])
+data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4
 
 os.chdir('d:\post')
@@ -301,7 +311,7 @@ if not os.path.exists(outputfolder):
     os.makedirs(outputfolder)
 f = open( outputfolder + "phi2_sway.plt",'w')
 f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/U*, <U'U'>/U*^2, <V'V'>/U*^2,\
-         <W'W'>/U*^2, <-U'W'>/U*^2  \n")
+         <W'W'>/U*^2, <-U'W'>/U*^2,tke_tm  \n")
 
 np.savetxt(f, data)
 f.close()
@@ -311,7 +321,7 @@ data2 = phase_average(path+'\PhaseAveragePhi3_0002', 3, 2, 1, 20, 1)
 data3 = phase_average(path+'\PhaseAveragePhi3_0003', 3, 3, 1, 20, 1)
 data4 = phase_average(path+'\PhaseAveragePhi3_0004', 3, 4, 1, 20, 1)
 #aveage data
-data = np.zeros([NPZ*48, 9])
+data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4
 
 os.chdir('d:\post')
@@ -321,7 +331,7 @@ if not os.path.exists(outputfolder):
     os.makedirs(outputfolder)
 f = open( outputfolder + "phi3_sway.plt",'w')
 f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/U*, <U'U'>/U*^2, <V'V'>/U*^2,\
-         <W'W'>/U*^2, <-U'W'>/U*^2  \n")
+         <W'W'>/U*^2, <-U'W'>/U*^2, tke_tm  \n")
 
 np.savetxt(f, data)
 f.close()
@@ -331,7 +341,7 @@ data2 = get_phi(path+'\POST_U_2D3_0002', 2, 5000, 15000, 50)
 data3 = get_phi(path+'\POST_U_2D3_0003', 3, 5000, 15000, 50)
 data4 = get_phi(path+'\POST_U_2D3_0004', 4, 5000, 15000, 50)
 #aveage data
-data = np.zeros([NPZ*48, 9])
+data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4
 
 os.chdir('d:\post')
@@ -341,7 +351,7 @@ if not os.path.exists(outputfolder):
     os.makedirs(outputfolder)
 f = open( outputfolder + "phi0_test_sway.plt",'w')
 f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/W*, UU/U*^2, VV/U*^2,\
-         WW/U*^2, UW/U*^2  \n")
+         WW/U*^2, UW/U*^2, tke_tm  \n")
 
 np.savetxt(f, data)
 f.close()
@@ -350,7 +360,7 @@ data2 = get_phi(path+'\POST_U_2D3_0002', 2, 5025, 15000, 50)
 data3 = get_phi(path+'\POST_U_2D3_0003', 3, 5025, 15000, 50)
 data4 = get_phi(path+'\POST_U_2D3_0004', 4, 5025, 15000, 50)
 #aveage data
-data = np.zeros([NPZ*48, 9])
+data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4
 
 os.chdir('d:\post')
@@ -360,7 +370,7 @@ if not os.path.exists(outputfolder):
     os.makedirs(outputfolder)
 f = open( outputfolder + "phi1_test_sway.plt",'w')
 f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/W*, UU/U*^2, VV/U*^2,\
-         WW/U*^2, UW/U*^2  \n")
+         WW/U*^2, UW/U*^2, tke_tm  \n")
 
 np.savetxt(f, data)
 f.close()

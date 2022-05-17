@@ -59,6 +59,7 @@ def phase_average(_folder, _phi, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     ww_phase = np.zeros([_NPZ, 48])
     uw_phase = np.zeros([_NPZ, 48])
     nti = int((tie - tis) / tii + 1)
+    tke_tm = np.zeros([_NPZ, 48])
     for it in range (nti):
         ti = tis + tii * it
         fname = 'Phase_Average_Phi{:01d}_{:04d}_{:08d}.dat'.format(_phi,t,ti)
@@ -74,6 +75,7 @@ def phase_average(_folder, _phi, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
         u_phase = u_phase + u[:,67:115]
         v_phase = v_phase + v[:,67:115]
         w_phase = w_phase + w[:,67:115]
+        tke_tm = tke_tm + (u[:,67:115]**2 + v[:,67:115]**2 + w[:,67:115]**2)
         #uu_phase = uu_phase + u_phase**2
         #vv_phase = vv_phase +  v_phase**2
         #ww_phase =  ww_phase + w_phase**2
@@ -84,6 +86,7 @@ def phase_average(_folder, _phi, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     u_phase = u_phase / int((tie - tis) / tii + 1)
     v_phase = v_phase / int((tie - tis) / tii + 1)
     w_phase = w_phase / int((tie - tis) / tii + 1)
+    tke_tm = tke_tm - u_phase**2 - v_phase**2 - w_phase**2
     #uu_phase = uu_phase / int((tie - tis) / tii + 1)
     #vv_phase = vv_phase / int((tie - tis) / tii + 1)
     #ww_phase = ww_phase / int((tie - tis) / tii + 1)
@@ -118,8 +121,9 @@ def phase_average(_folder, _phi, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     vv_phase = vv_phase.reshape([_NPZ*48]) 
     ww_phase = ww_phase.reshape([_NPZ*48]) 
     uw_phase = uw_phase.reshape([_NPZ*48]) 
+    tke_tm = tke_tm.reshape([_NPZ*48])
     #store data into array
-    data = np.zeros([_NPZ*48, 9])
+    data = np.zeros([_NPZ*48, 10])
     data[:,0] = x_phase
     data[:,1] = z_phase
     data[:,2] = u_phase*_U/_Ustar
@@ -129,6 +133,7 @@ def phase_average(_folder, _phi, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     data[:,6] = vv_phase*((_U/_Ustar)**2)
     data[:,7] = ww_phase*((_U/_Ustar)**2)
     data[:,8] = uw_phase*((_U/_Ustar)**2)
+    data[:,9] = tke_tm
     #save data
     return data
 def get_phi(folder, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
@@ -145,6 +150,7 @@ def get_phi(folder, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     vv_phase = np.zeros([_NPZ, 48])
     ww_phase = np.zeros([_NPZ, 48])
     uw_phase = np.zeros([_NPZ, 48])
+    tke_tm = np.zeros([_NPZ, 48])
     nti = int((tie - tis) / tii + 1)
     for it in range (nti):
         ti = tis + tii * it
@@ -161,6 +167,7 @@ def get_phi(folder, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
         u_phase = u_phase + u[:,67:115]
         v_phase = v_phase + v[:,67:115]
         w_phase = w_phase + w[:,67:115]
+        tke_tm = tke_tm + (u[:,67:115]**2 + v[:,67:115]**2 + w[:,67:115]**2)
 
     #time average
     x_phase = x_phase / int((tie - tis) / tii + 1)
@@ -168,6 +175,8 @@ def get_phi(folder, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     u_phase = u_phase / int((tie - tis) / tii + 1)
     v_phase = v_phase / int((tie - tis) / tii + 1)
     w_phase = w_phase / int((tie - tis) / tii + 1)
+    tke_tm = tke_tm / int((tie - tis) / tii + 1)
+    tke_tm = tke_tm - (u_phase**2 + v_phase**2 + w_phase**2)
 
     for it in range (nti):
         ti = tis + tii * it
@@ -198,8 +207,9 @@ def get_phi(folder, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     vv_phase = vv_phase.reshape([_NPZ*48]) - v_phase**2
     ww_phase = ww_phase.reshape([_NPZ*48]) - w_phase**2
     uw_phase = uw_phase.reshape([_NPZ*48]) - u_phase*w_phase
+    tke_tm = tke_tm.reshape([_NPZ*48])
     #store data into array
-    data = np.zeros([_NPZ*48, 9])
+    data = np.zeros([_NPZ*48, 10])
     data[:,0] = x_phase
     data[:,1] = z_phase
     data[:,2] = u_phase*_U/_Ustar
@@ -209,5 +219,6 @@ def get_phi(folder, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     data[:,6] = vv_phase*((_U/_Ustar)**2)
     data[:,7] = ww_phase*((_U/_Ustar)**2)
     data[:,8] = -uw_phase*((_U/_Ustar)**2)
+    data[:,9] = tke_tm
     #save data
     return data

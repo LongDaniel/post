@@ -1,3 +1,4 @@
+import os
 import sys
 import numpy as np
 import tecplot_io as tec
@@ -29,7 +30,7 @@ def find_index(_z, _limits):
 def get_coord_range (_loc, _D):
 	_xc = _loc[0]
 	_yc = _loc[1]
-	_xran = [_xc+0.1*_D, _xc+8.0*_D]
+	_xran = [_xc+0.2*_D, _xc+6.0*_D]
 	_yran = [_yc-2.0*_D, _yc+2.0*_D]
 	return _xran, _yran
 
@@ -54,34 +55,38 @@ def get_index_range_x (_x, _xran):
 	_ixran = [_ixmin, _ixmax]
 	return _ixran
 
-r = 0.075
+r = 40
 D = 2.0*r
-nx = 384
+nx = 192
 ny = 1
 nz = 65
 nvar = 6
-nturbine = 1
+nturbine = 16
 tis = 10000
-tie = 10290 + 1
-tii = 10
-dt = 0.0013662*tii
+tie = 15000 + 1
+tii = 100
+dt = 0.2941315855*tii
 nt = (tie -1 - tis) / tii + 1
 ntm = nt - 1
 modenum = 11 #how many modes will be used to reconstruc
 
-casename = "114_2"
-foldername = "./" + casename + "/POST_U_2D3_0001/"
-outputfolder = "./" + casename + "_dmd/"
+casename = "d:\post\Pitch_test"
+foldername = casename  +'\POST_U_2D3_0001'
+outputfolder = casename + '\dmd'
 
-turbinefile = "./" + casename + "/" + "Turbine.inp"
+#change the current directory
+os.chdir(casename)
+print(os.getcwd())
+turbinefile = casename + "/" + "Turbine.inp"
 turbinedata = np.genfromtxt(turbinefile, skip_header = 1)
-turbineloc = turbinedata[3:5] #single turbine
+turbineloc = turbinedata[3:5]
+print(turbineloc[0,:]) #single turbine
 #nturbine = len(turbineloc[:,0]) #multiple turbines
 
 for iturb in range(nturbine):
 	xtmp, ytmp = get_coord_range(turbineloc[:],D)
 
-filename = foldername + "POST_U_2D3_" + "{:010d}".format(tis) + "_0001.DAT"
+filename = foldername + "\POST_U_2D3_" + "{:010d}".format(tis) + "_0001.DAT"
 data0 = tec.tecplot_reader(filename, [nz, ny, nx, nvar], 2)
 data0 = data0.reshape([nz,nx,nvar])
 X = data0[:,:,0].reshape([nz,nx]).transpose()
