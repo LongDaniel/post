@@ -1,4 +1,4 @@
-import sys
+import os
 import numpy as np
 import tecplot_io as tec
 
@@ -54,18 +54,18 @@ def get_index_range_x (_x, _xran):
 	_ixran = [_ixmin, _ixmax]
 	return _ixran
 
-r = 0.075
+r = 40
 D = 2.0*r
-nx = 384
-ny = 96
+nx = 192
+ny = 192
 nz = 1
 #nz = 65
 nvar = 6
-nturbine = 1
-tis = 10020
-tie = 20000 + 1
-tii = 20
-dt = 0.0013662 * tii
+nturbine = 16
+tis = 10000
+tie = 15000 + 1
+tii = 100
+dt = 0.2941315855 * tii
 nt = (tie -1 - tis) / tii + 1
 ntm = nt - 1
 modenum = 101 #how many modes will be used to reconstruct
@@ -78,18 +78,22 @@ jout1 = int(jout1)
 iout2 = int(iout2)
 jout2 = int(jout2)
 
-casename = "114_2"
-foldername = "./" + casename + "/POST_U_2D2_0004/"
+casename = "d:\post\Pitch_test"
+foldername =  casename + "/POST_U_2D2_0004/"
 #foldername = "./" + casename + "/POST_U_2D3_0001/"
-outputfolder = "./" + casename + "_dmd/"
+outputfolder = casename + "/dmd/"
 
-turbinefile = "./" + casename + "/" + "Turbine.inp"
+os.chdir(casename)
+print(os.getcwd())
+if not os.path.exists(outputfolder):
+    os.makedirs(outputfolder)
+turbinefile = casename + "/" + "Turbine.inp"
 turbinedata = np.genfromtxt(turbinefile, skip_header = 1)
-turbineloc = turbinedata[3:5] #single turbine
+turbineloc = turbinedata[:,3:5] #single turbine
 #nturbine = len(turbineloc[:,0]) #multiple turbines
 
 for iturb in range(nturbine):
-	xtmp, ytmp = get_coord_range(turbineloc[:],D)
+	xtmp, ytmp = get_coord_range(turbineloc[iturb,:],D)
 
 filename = foldername + "POST_U_2D2_" + "{:010d}".format(tis) + "_0004.DAT"
 #filename = foldername + "POST_U_2D3_" + "{:010d}".format(tis) + "_0001.DAT"
@@ -111,7 +115,7 @@ ixran = np.zeros((nturbine,2), dtype = 'int')
 iyran = np.zeros((nturbine,2), dtype = 'int')
 for iturb in range(nturbine):
 #x-y direc
-	xran[iturb,:], yran[iturb,:] = get_coord_range(turbineloc[:], D)
+	xran[iturb,:], yran[iturb,:] = get_coord_range(turbineloc[iturb,:], D)
 	ixran[iturb,:], iyran[iturb,:] = get_index_range(x1, z1, xran[iturb,:], yran[iturb,:])
 #x-z dir
 #	xran[iturb,:] = get_coord_range_x(turbineloc[:], D)

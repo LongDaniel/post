@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import tecplot_io as tec
-import h5py
 
 
 def diff_central(x, y):
@@ -253,14 +252,14 @@ nti = int((tie - tis) / tii + 1)
 NPX = 192
 NPY = 192
 NPZ = 65
-path = path = 'd:\post\SWAY'
+path = path = 'd:\post\Fixed_new'
 os.chdir(path)
 
 #process phase average
-data1 = phase_average(path+'\PhaseAveragePhi0_0001', 0, 1, 0, 600, 3)
-data2 = phase_average(path+'\PhaseAveragePhi0_0002', 0, 2, 0, 600, 3)
-data3 = phase_average(path+'\PhaseAveragePhi0_0003', 0, 3, 0, 600, 3)
-data4 = phase_average(path+'\PhaseAveragePhi0_0004', 0, 4, 0, 600, 3)
+data1 = phase_average(path+'\PhaseAveragePhi0_0001', 0, 1, 0, 900, 1)
+data2 = phase_average(path+'\PhaseAveragePhi0_0002', 0, 2, 0, 900, 1)
+data3 = phase_average(path+'\PhaseAveragePhi0_0003', 0, 3, 0, 900, 1)
+data4 = phase_average(path+'\PhaseAveragePhi0_0004', 0, 4, 0, 900, 1)
 #aveage data
 data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4
@@ -269,17 +268,17 @@ outputfolder = 'post_result/'
 #create output folder named 'post_result' 
 if not os.path.exists(outputfolder):
     os.makedirs(outputfolder)
-f = open( outputfolder + "phi0_sway.plt",'w')
+f = open( outputfolder + "phi0_fixed.plt",'w')
 f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/U*, <U'U'>/U*^2, <V'V'>/U*^2,\
          <W'W'>/U*^2, <-U'W'>/U*^2 ,tke_tm \n")
 
 np.savetxt(f, data)
 f.close()
 
-data1 = phase_average(path+'\PhaseAveragePhi1_0001', 1, 1, 0, 600, 1)
-data2 = phase_average(path+'\PhaseAveragePhi1_0002', 1, 2, 0, 600, 1)
-data3 = phase_average(path+'\PhaseAveragePhi1_0003', 1, 3, 0, 600, 1)
-data4 = phase_average(path+'\PhaseAveragePhi1_0004', 1, 4, 0, 600, 1)
+data1 = phase_average(path+'\PhaseAveragePhi1_0001', 1, 1, 0, 900, 1)
+data2 = phase_average(path+'\PhaseAveragePhi1_0002', 1, 2, 0, 900, 1)
+data3 = phase_average(path+'\PhaseAveragePhi1_0003', 1, 3, 0, 900, 1)
+data4 = phase_average(path+'\PhaseAveragePhi1_0004', 1, 4, 0, 900, 1)
 #aveage data
 data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4) / 4
@@ -296,10 +295,10 @@ f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/U*, <U'U'>/U*^2, <V'V'>/U*^2,\
 np.savetxt(f, data)
 f.close()
 
-data1 = phase_average(path+'\PhaseAveragePhi2_0001', 2, 1, 1, 19, 1)
-data2 = phase_average(path+'\PhaseAveragePhi2_0002', 2, 2, 1, 19, 1)
-data3 = phase_average(path+'\PhaseAveragePhi2_0003', 2, 3, 1, 19, 1)
-data4 = phase_average(path+'\PhaseAveragePhi2_0004', 2, 4, 1, 19, 1)
+data1 = phase_average(path+'\PhaseAveragePhi2_0001', 2, 1, 1, 30, 1)
+data2 = phase_average(path+'\PhaseAveragePhi2_0002', 2, 2, 1, 30, 1)
+data3 = phase_average(path+'\PhaseAveragePhi2_0003', 2, 3, 1, 30, 1)
+data4 = phase_average(path+'\PhaseAveragePhi2_0004', 2, 4, 1, 30, 1)
 #aveage data
 data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4
@@ -316,10 +315,10 @@ f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/U*, <U'U'>/U*^2, <V'V'>/U*^2,\
 np.savetxt(f, data)
 f.close()
 
-data1 = phase_average(path+'\PhaseAveragePhi3_0001', 3, 1, 1, 20, 1)
-data2 = phase_average(path+'\PhaseAveragePhi3_0002', 3, 2, 1, 20, 1)
-data3 = phase_average(path+'\PhaseAveragePhi3_0003', 3, 3, 1, 20, 1)
-data4 = phase_average(path+'\PhaseAveragePhi3_0004', 3, 4, 1, 20, 1)
+data1 = phase_average(path+'\PhaseAveragePhi3_0001', 3, 1, 1, 30, 1)
+data2 = phase_average(path+'\PhaseAveragePhi3_0002', 3, 2, 1, 30, 1)
+data3 = phase_average(path+'\PhaseAveragePhi3_0003', 3, 3, 1, 30, 1)
+data4 = phase_average(path+'\PhaseAveragePhi3_0004', 3, 4, 1, 30, 1)
 #aveage data
 data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4
@@ -336,10 +335,10 @@ f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/U*, <U'U'>/U*^2, <V'V'>/U*^2,\
 np.savetxt(f, data)
 f.close()
 
-data1 = get_phi(path+'\POST_U_2D3_0001',  1, 5000, 15000, 50)
-data2 = get_phi(path+'\POST_U_2D3_0002', 2, 5000, 15000, 50)
-data3 = get_phi(path+'\POST_U_2D3_0003', 3, 5000, 15000, 50)
-data4 = get_phi(path+'\POST_U_2D3_0004', 4, 5000, 15000, 50)
+data1 = get_phi(path+'\POST_U_2D3_0001',  1, 5000, 15000, 100)
+data2 = get_phi(path+'\POST_U_2D3_0002', 2, 5000, 15000, 100)
+data3 = get_phi(path+'\POST_U_2D3_0003', 3, 5000, 15000, 100)
+data4 = get_phi(path+'\POST_U_2D3_0004', 4, 5000, 15000, 100)
 #aveage data
 data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4
@@ -355,10 +354,10 @@ f.write("VARIABLES = X, Z, <U>/U*, <V>/U*, <W>/W*, UU/U*^2, VV/U*^2,\
 
 np.savetxt(f, data)
 f.close()
-data1 = get_phi(path+'\POST_U_2D3_0001', 1, 5025, 15000, 50)
-data2 = get_phi(path+'\POST_U_2D3_0002', 2, 5025, 15000, 50)
-data3 = get_phi(path+'\POST_U_2D3_0003', 3, 5025, 15000, 50)
-data4 = get_phi(path+'\POST_U_2D3_0004', 4, 5025, 15000, 50)
+data1 = get_phi(path+'\POST_U_2D3_0001', 1, 5000, 15000, 100)
+data2 = get_phi(path+'\POST_U_2D3_0002', 2, 5000, 15000, 100)
+data3 = get_phi(path+'\POST_U_2D3_0003', 3, 5000, 15000, 100)
+data4 = get_phi(path+'\POST_U_2D3_0004', 4, 5000, 15000, 100)
 #aveage data
 data = np.zeros([NPZ*48, 10])
 data = (data1 + data2 + data3 + data4)/4

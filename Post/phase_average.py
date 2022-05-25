@@ -222,3 +222,91 @@ def get_phi(folder, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
     data[:,9] = tke_tm
     #save data
     return data
+
+
+def time_average(folder, t, tis, tie, tii,_NPZ,_NPX,_U,_Ustar):
+    #change working directory
+    os.chdir(folder)
+    print("current working directory is: {0}".format(os.getcwd()))
+    #read data
+    x_phase = np.zeros([_NPZ, 48])
+    z_phase = np.zeros([_NPZ, 48])
+    u_phase = np.zeros([_NPZ, 48])
+    v_phase = np.zeros([_NPZ, 48])
+    w_phase = np.zeros([_NPZ, 48])
+    uu_phase = np.zeros([_NPZ, 48])
+    vv_phase = np.zeros([_NPZ, 48])
+    ww_phase = np.zeros([_NPZ, 48])
+    uw_phase = np.zeros([_NPZ, 48])
+    tke_tm = np.zeros([_NPZ, 48])
+    nti = int((tie - tis) / tii + 1)
+    for it in range (nti):
+        ti = tis + tii * it
+        fname = 'POST_UI_2D3_{:010d}_{:04d}.dat'.format(ti,t)
+        f = tec.tecplot_reader(fname, [_NPZ, _NPX, 6], 2)
+        f = f.reshape([_NPZ, _NPX, 6])
+        x = f[:,:,0]
+        z = f[:,:,2]
+        u = f[:,:,3]
+        v = f[:,:,4]
+        w = f[:,:,5]
+        x_phase = x_phase + x[:,67:115]
+        z_phase = z_phase + z[:,67:115]
+        u_phase = u_phase + u[:,67:115]
+        v_phase = v_phase + v[:,67:115]
+        w_phase = w_phase + w[:,67:115]
+        tke_tm = tke_tm + (u[:,67:115]**2 + v[:,67:115]**2 + w[:,67:115]**2)
+
+    #time average
+    x_phase = x_phase / int((tie - tis) / tii + 1)
+    z_phase = z_phase / int((tie - tis) / tii + 1)
+    u_phase = u_phase / int((tie - tis) / tii + 1)
+    v_phase = v_phase / int((tie - tis) / tii + 1)
+    w_phase = w_phase / int((tie - tis) / tii + 1)
+    tke_tm = tke_tm / int((tie - tis) / tii + 1)
+    tke_tm = tke_tm - (u_phase**2 + v_phase**2 + w_phase**2)
+
+    for it in range (nti):
+        ti = tis + tii * it
+        fname = 'POST_UI_2D3_{:010d}_{:04d}.dat'.format(ti,t)
+        f = tec.tecplot_reader(fname, [_NPZ, _NPX, 6], 2)
+        f = f.reshape([_NPZ, _NPX, 6])
+        x = f[:,:,0]
+        z = f[:,:,2]
+        u = f[:,:,3]
+        v = f[:,:,4]
+        w = f[:,:,5]
+        uu_phase = uu_phase + (u[:,67:115] - u_phase)**2
+        vv_phase = vv_phase + (v[:,67:115] - v_phase)**2
+        ww_phase = ww_phase + (w[:,67:115] - w_phase)**2
+        uw_phase = uw_phase + (u[:,67:115] - u_phase)*(w[:,67:115] - w_phase)
+
+    uu_phase = uu_phase / nti
+    vv_phase = vv_phase / nti
+    ww_phase = ww_phase / nti
+    uw_phase = uw_phase / nti
+    #reshape data
+    x_phase = x_phase.reshape([_NPZ*48])
+    z_phase = z_phase.reshape([_NPZ*48])
+    u_phase = u_phase.reshape([_NPZ*48])
+    v_phase = v_phase.reshape([_NPZ*48])
+    w_phase = w_phase.reshape([_NPZ*48])
+    uu_phase = uu_phase.reshape([_NPZ*48]) - u_phase**2
+    vv_phase = vv_phase.reshape([_NPZ*48]) - v_phase**2
+    ww_phase = ww_phase.reshape([_NPZ*48]) - w_phase**2
+    uw_phase = uw_phase.reshape([_NPZ*48]) - u_phase*w_phase
+    tke_tm = tke_tm.reshape([_NPZ*48])
+    #store data into array
+    data = np.zeros([_NPZ*48, 10])
+    data[:,0] = x_phase
+    data[:,1] = z_phase
+    data[:,2] = u_phase*_U/_Ustar
+    data[:,3] = v_phase*_U/_Ustar
+    data[:,4] = w_phase*_U/_Ustar
+    data[:,5] = uu_phase*((_U/_Ustar)**2)
+    data[:,6] = vv_phase*((_U/_Ustar)**2)
+    data[:,7] = ww_phase*((_U/_Ustar)**2)
+    data[:,8] = -uw_phase*((_U/_Ustar)**2)
+    data[:,9] = tke_tm
+    #save data
+    return data
