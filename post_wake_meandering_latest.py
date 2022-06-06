@@ -83,14 +83,14 @@ def collect_timeseries(_ixran, _y_ts, _u, _y2):
 	_u2 = _u[_ixran[0]:(_ixran[1]+1),_iytemp]
 	return _u2	
 
-def identify_wake_core(_ixran, _iyran, _h, _x2, _y2, width=20, _method=2, _hw=6):
+def identify_wake_core(_ixran, _iyran, _h, _x2, _y2, width=20, _method=1, _hw=6):
 	_ix = []
 	_iy = []
 	_x = []
 	_y = []
-	#print("ixran="+str(_ixran)+", iyran="+str(_iyran)+", iyran[0]="+str(_iyran[0]))
+	print("ixran="+str(_ixran)+", iyran="+str(_iyran)+", iyran[0]="+str(_iyran[0]))
 	
-	_tempwidth = (_iyran[1] - _iyran[0])/3
+	_tempwidth = (_iyran[1] - _iyran[0])/2
 	_tempstart = _iyran[0] + (_iyran[1] - _iyran[0])/2 - _tempwidth/2	
 	_tempend = _tempstart + _tempwidth
 	
@@ -100,15 +100,15 @@ def identify_wake_core(_ixran, _iyran, _h, _x2, _y2, width=20, _method=2, _hw=6)
 		#_ihmin = np.argmin(_h[_i, _iyran[0]:(_iyran[1]+1)])
 		#print("ihmin="+str(_ihmin))
 		#_itemp = _iyran[0] + _ihmin
-	
+		print("tempstart="+str(_tempstart)+", tempend="+str(_tempend))
 		if _method==1:
 			# method 1: simply find the global minimum
-			_ihmin = np.argmin(_h[_i, _tempstart:_tempend])
+			_ihmin = np.argmin(_h[_i, int(_tempstart):int(_tempend)])
 		elif _method==2:
 			# method 2: firstly get a band average value, then find the location of the minimum
 			for _j in range(_iyran[0]+_hw, _iyran[1]-_hw):
 				_utmp[_j] = np.average(_h[_i, (_j-_hw):(_j+_hw)])
-			_ihmin = np.argmin(_utmp[_tempstart:_tempend])
+			_ihmin = np.argmin(_utmp[int(_tempstart):int(_tempend)])
 			
 		## I'd like to set the hub as starting point of wake centerline
 				
@@ -116,11 +116,12 @@ def identify_wake_core(_ixran, _iyran, _h, _x2, _y2, width=20, _method=2, _hw=6)
 		## following code is to improve the continuity of search (only search for the next point in a range of last point.)
 		## but it turns out to be easily limited to bottom or top edge of the search frame		
 		_itemp = _tempstart + _ihmin
-		_tempstart = _itemp - width/2
+		print("ihmin="+str(_ihmin)+", itemp="+str(_itemp))
+		#_tempstart = _itemp - width/2
 		
-		_tempwidth = width
+		#_tempwidth = width
 		
-		_tempend = _itemp + width/2
+		#_tempend = _itemp + width/2
 		if _tempstart < (_iyran[0]+_hw):
 			_tempstart = _iyran[0] + _hw	
 		if _tempend > (_iyran[1]-_hw):
@@ -129,7 +130,7 @@ def identify_wake_core(_ixran, _iyran, _h, _x2, _y2, width=20, _method=2, _hw=6)
 		_ix.append(_i)
 		_iy.append(_itemp)
 		_x.append(_x2[_i])
-		_y.append(_y2[_itemp])
+		_y.append(_y2[int(_itemp)])
 		#print(str(_i)+" "+str(_itemp)+" "+str(_x2[_i])+" "+str(_y2[_itemp]))
 	return _ix, _iy, _x, _y
 
@@ -142,7 +143,9 @@ def expand_domain(_in, _nepd, mode=0, shift=0):
 		_out = _in
 		return _out
 		
-	_nx2 = _nx + _nepd
+	_nx2 = int(_nx + _nepd)
+	print("_nx2="+str(_nx2))
+	print("_nepd="+str(_nepd))
 	if len(_in.shape) == 1 :
 		# 1D case:
 		_out = np.empty(_nx2)
@@ -154,7 +157,7 @@ def expand_domain(_in, _nepd, mode=0, shift=0):
 		_out[:_nx, :] = _in[:_nx, :]
 		
 		if mode == 0:
-			_out[_nx:_nx2, :] =  _in[:_nepd, :]	
+			_out[_nx:_nx2, :] =  _in[:int(_nepd), :]	
 		elif mode == 1:
 			# interpolate/extrapolate
 			for _i in range(_ny):				
@@ -163,7 +166,7 @@ def expand_domain(_in, _nepd, mode=0, shift=0):
 				_out[_nx:_nx2, _i] = _line(np.arange(_nx, _nx2))
 				
 		if shift == 1 :
-			_out2 = _out[_nepd:_nx2, :]
+			_out2 = _out[int(_nepd):_nx2, :]
 			_out = _out2			
 	
 	return _out
@@ -217,7 +220,7 @@ def smooth(x,window_len=11,window='hanning'):
 
 
     s=np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
-    #print(len(s))
+    print(len(s))
     if window == 'flat': #moving average
         w=np.ones(window_len,'d')
     else:
@@ -229,7 +232,7 @@ def smooth(x,window_len=11,window='hanning'):
     #return y
     
     _start = len(w)/2
-    return y[(_start):(_start+len(x))]
+    return y[int(_start):int(_start+len(x))]
 
 # These are the "Tableau 20" colors as RGB.  
 tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120), 
@@ -257,19 +260,19 @@ XL = 2.0*np.pi/PEX
 L0 = 1.0
 U0 = 11.5258407161
 T0 = L0/U0
-dt = 0.342716489688*T0
-
+#dt = 0.342716489688*T0
+dt = 0.68543297937*T0
 ufric = 0.08442747 * U0
 
-nx = 384
-ny = 384
+nx = 192
+ny = 192
 nz = 1
 nvar = 6
 
-casenames = ["Refine", "ALM_fsi2", "motion"]
+casenames = ["Fixed_Turbine", "Pitch_Turbine", "SWAY_Turbine"]
 
 #change working directory
-path  = 'd:\post'
+path  = 'd:/post/Project'
 os.chdir(path)
 
 caseprintnames = ["ONS", "OFX", "OFL"]
@@ -277,7 +280,7 @@ caseprintnames = ["ONS", "OFX", "OFL"]
 unametags = ["U", "UI", "UI"]
 
 icase = 0
-tis = 10000
+tis = 5000
 tie = 15000
 tii = 100
 foldername = "./"+casenames[icase]+"/POST_U_2D2_0002/"
@@ -294,27 +297,27 @@ casename_e = 1
 #for icase in range(len(casenames)):
 for icase in range(casename_s, casename_e):
 	if icase==0:
-		tis = 10000
+		tis = 5000
 		#tie = 240450+1
-		tie = 15000
+		tie = 15000+1
 		tii = 100
 	elif icase==1:
-		tis = 240150
+		tis = 10000	
 		#tie = 240450+1
-		tie = 264900+1
-		tii = 150
+		tie = 15000+1
+		tii = 100
 	elif icase==2:
-		tis = 240150
+		tis = 10000
 		#tie = 240450+1
-		tie = 264900+1
-		tii = 150
+		tie = 15000+1
+		tii = 100
 	else:
 		print("icase error.")
 
-	path  = 'd:\post'
+	path  = 'd:/post/Project'
 	os.chdir(path+'/'+casenames[icase])
 	print('Current directory: ' + os.getcwd())
-	foldername = "./"+casenames[icase]+"/POST_U_2D2_0002/"
+	foldername = path+"/"+casenames[icase]+"/POST_U_2D2_0002/"
 
 	yfftm2 = []
 	u_ts2 = []
@@ -361,12 +364,12 @@ for icase in range(casename_s, casename_e):
 		x1 = X[:,0]
 		y1 = Y[0,:]
 		
-		U2 = expand_domain(U1, nepd, shift=1)
-		X2 = expand_domain(X, nepd, mode=1, shift=1)
-		Y2 = expand_domain(Y, nepd, shift=1)
+		U2 = expand_domain(U1, nepd, shift=0)
+		X2 = expand_domain(X, nepd, mode=1, shift=0)
+		Y2 = expand_domain(Y, nepd, shift=0)
 		x2 = X2[:,0]
 		y2 = Y2[0,:]
-
+		print("x2.min="+str(x2.min()))
 		
 		#print(turbineloc)
 
@@ -417,30 +420,31 @@ for icase in range(casename_s, casename_e):
 			#print(np.array(iytemp))
 			#print(np.vstack((np.array(ixtemp), np.array(iytemp))))
 			
-			p_temp = np.abs(np.fft.fft(ytemp-np.average(ytemp)))
-			yfft.append(p_temp)	
-			if iturb==0:
-				yfftm = p_temp
-			else:			
-				yfftm = yfftm + p_temp
+			#p_temp = np.abs(np.fft.fft(ytemp-np.average(ytemp)))
+			#yfft.append(p_temp)	
+			#if iturb==0:
+			#	yfftm = p_temp
+			#else:			
+			#	yfftm = yfftm + p_temp
+			#	print("p_temp="+str(p_temp), "yfftm="+str(yfftm))
 			
 		# u_ts2[timestep_index][turbine_index][centerlinepoint_index]
 		u_ts2.append(u_ts)
 		
 		xfft = 2.0*np.pi/(x2[1]-x2[0]) * np.arange(len(yfftm))
-		yfftm = yfftm / nturbine
-		if it==tis:
-			yfftm2 = yfftm
-		else:
-			yfftm2 = yfftm2 + yfftm
+		#yfftm = yfftm / nturbine
+		#if it==tis:
+		#	yfftm2 = yfftm
+		#else:
+		#	yfftm2 = yfftm2 + yfftm
 
 		fig, ax = plt.subplots()
 		#levels = np.arange(0.5, 1.5, 0.01) 
 		#ax1 = plt.contourf(X, Y, U2, level=levels, cmap=plt.get_cmap(name ="Oranges_r"), label='U')
 
 		normalize = mpl.colors.Normalize(vmin=U2.min(), vmax=U2.max())
-		#cmap=plt.get_cmap("Oranges_r")
-		cmap=plt.get_cmap("coolwarm_r")
+		cmap=plt.get_cmap("rainbow")
+		#cmap=plt.get_cmap("coolwarm_r")
 
 		color = U2
 		#color=cmap(normalize(U2[i]))
@@ -486,7 +490,9 @@ for icase in range(casename_s, casename_e):
 		plt.xlim([x2.min(), x2.max()])
 		plt.ylim([y2.min(), y2.max()])
 		#plt.axis('equal')
-		plt.savefig(foldername+"wake_{:010d}".format(it)+".png")
+		plt.savefig(foldername+"wake_{:04d}".format(int((it-tis)/tii+1))+".png")
+		plt.xlim([x2.min(), x2.max()])
+		plt.ylim([y2.min(), y2.max()])		
 		plt.close()
 
 		#fig2 = plt.figure()
@@ -501,22 +507,24 @@ for icase in range(casename_s, casename_e):
 
 	plt.figure(fig5.number)
 	plt.savefig(foldername+"allwake.png")
+	#plt.xlim([x2.min(), x2.max()])
+	#plt.ylim([y2.min(), y2.max()])	
 	plt.close()
 
-	yfftm2 = yfftm2 / (len(range(tis, tie, tii)))
-	yfftm3.append(yfftm2)
-	fig3 = plt.figure()
-	ax3 = fig3.add_subplot(1,1,1)
-	plt.plot(xfft, yfftm2)
-	plt.xscale('log')
-	plt.yscale('log')
-	plt.ylim([1,1e4])
-	plt.xlabel('$k$')
-	plt.ylabel(r'$S_y$')
-	plt.savefig(foldername+"wake_spectrum.png")
-	plt.close()
+#	yfftm2 = yfftm2 / (len(range(tis, tie, tii)))
+#	yfftm3.append(yfftm2)
+#	fig3 = plt.figure()
+#	ax3 = fig3.add_subplot(1,1,1)
+#	plt.plot(xfft, yfftm2)
+#	plt.xscale('log')
+#	plt.yscale('log')
+#	plt.ylim([1,1e4])
+#	plt.xlabel('$k$')
+#	plt.ylabel(r'$S_y$')
+#	plt.savefig(foldername+"wake_spectrum.png")
+#	plt.close()
 
-	np.savetxt(foldername+"wave_spectrum.dat", np.vstack((xfft, yfftm2)))
+#	np.savetxt(foldername+"wave_spectrum.dat", np.vstack((xfft, yfftm2)))
 
 	#u_ts3.append(u_ts2)
 	lentemp = np.empty(nturbine, dtype='int')

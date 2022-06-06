@@ -23,8 +23,9 @@ Sy = 7
 #hbar = 0.46
 #uinfty = 2.54390548295
 #dt = 0.2941315855
-dt = 0.68543297937
-#dt = 0.3150659270689523
+#dt = 0.68543297937
+#dt = 0.461442495048675
+dt = 0.3150659270689523
 #Rotational angular period
 T_turb = 42.84
 T_wave = 126.02637082768938 
@@ -34,32 +35,38 @@ H_hub = 70
 #Mean finite velocity
 U = 11.5258407161
 U_star = 0.421
-tis = 200
+tis = 100
 tie = 15000
-tii = 200
+tii = 100
 nti = int((tie - tis) / tii + 1)
 NPX = 192
 NPY = 192
 NPZ = 65
-s =15   #number of sampling windows
-path  = 'd:\post\Project'
+s =1   #number of sampling windows
+path  = 'd:\post'
+#path  = 'd:\post'
 os.chdir(path)
 #delare working casename
-casenames = ["Fixed_Turbine","Pitch_Turbine","SWAY_Turbine","fixed_no_swell"]
-#casenames = ["Pitch_1305"]
+#casenames = ["Fixed_Turbine","Pitch_Turbine","SWAY_Turbine","fixed_no_swell"]
+casenames = ["Test"]
 unametags = ["U", "UI", "UI"]
 casename_s = 0
 casename_e = 1
 
 time = get_time(path+"./"+casenames[casename_s],nturbine,T_wave)
 print(len(time))
-data = np.zeros((len(time[:-15000]),int(casename_e-casename_s+1)))
+#data = np.zeros((len(time[-15000:]),int(casename_e-casename_s+1)))
+data = np.zeros((len(time),int(casename_e-casename_s+1)))
 data1 =  np.zeros((NPZ,7*int(casename_e-casename_s+1)))
-data2 = np.zeros((int(len(time[:-15000])/s),int(casename_e-casename_s+1)))
-data [:,0] = time[:-15000]
-N = len(time[:-15000])/s
+#data2 = np.zeros((int(len(time[-15000:])/s),int(casename_e-casename_s+1)))
+data2 = np.zeros((int(len(time)/s),int(casename_e-casename_s+1)))
+#data [:,0] = time[-15000:]
+data [:,0] = time
+#N = len(time[-15000:])/s
+N = len(time)/s
 n = np.arange(N)
-data2[:,0] = n/time[int(15000/s)]
+#data2[:,0] = n/time[int(14999/s)]
+data2[:,0] = n/time
 for icase in range(casename_s, casename_e):
     foldername = "./"+casenames[icase]
     #change working directory
@@ -69,12 +76,17 @@ for icase in range(casename_s, casename_e):
    
     globals()["{casenames[icase]}"] = power_density_average\
                                         (path+foldername,nturbine,dt,Sx,Sy,D)
-    globals()["Pmean_{casenames[icase]}"] = globals()["{casenames[icase]}"][:-15000].mean()
-    globals()["Pshift_{casenames[icase]}"] = globals()["{casenames[icase]}"][:-15000]-\
-                                            globals()["Pmean_{casenames[icase]}"]
+#    globals()["Pmean_{casenames[icase]}"] = globals()["{casenames[icase]}"][-15000:].mean()
+    globals()["Pmean_{casenames[icase]}"] = globals()["{casenames[icase]}"].mean()
+#    globals()["Pshift_{casenames[icase]}"] = globals()["{casenames[icase]}"][-15000:]-\
+#                                            globals()["Pmean_{casenames[icase]}"]
+    globals()["Pshift_{casenames[icase]}"] = globals()["{casenames[icase]}"]-\
+                                            globals()["Pmean_{casenames[icase]}"]                                        
   
+#    globals()["reshape_"+casenames[icase]] = globals()["Pshift_{casenames[icase]}"]\
+#                                            .reshape(s,int(len(time[-15000:])/s))
     globals()["reshape_"+casenames[icase]] = globals()["Pshift_{casenames[icase]}"]\
-                                            .reshape(s,int(len(time[:-15000])/s))
+                                            .reshape(s,int(len(time)/s))                                        
     globals()["FFT_"+casenames[icase]] = np.copy(globals()["reshape_"+casenames[icase]])                                    
     for i in range(s):
         globals()["FFT_"+casenames[icase]][i,:] = np.absolute\

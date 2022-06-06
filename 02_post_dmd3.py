@@ -67,8 +67,8 @@ tie = 15000 + 1
 tii = 100
 dt = 0.2941315855 * tii
 nt = (tie -1 - tis) / tii + 1
-ntm = nt - 1
-modenum = 101 #how many modes will be used to reconstruct
+ntm = int(nt - 1)
+modenum = 15 #how many modes will be used to reconstruct
 iout1 = nx * (5 + 3) / 28.8 #turbine position : 5D, i output : 3D from turbine
 jout1 = ny / 2
 iout2 = nx * (5 + 5) / 28.8 #turbine position : 5D, i output : 3D from turbine
@@ -130,14 +130,15 @@ kb2 = iyran[0,1]
 #kb1 = 0
 #kb2 = nz - 3
 ibkb = (ib2 - ib1 + 1) * (kb2 - kb1 + 1)
+print("ibkb = "+str(ibkb),"ntm = "+str(ntm))
 
 f1 = open( outputfolder + "01.plt",'w')
 f2 = open( outputfolder + "02_dmd_mode.plt",'w')
 f3 = open( outputfolder + "03_reconstruction.plt",'w')
 f4 = open( outputfolder + "04_comparison.plt",'w')
 
-data1 = np.zeros((ibkb, ntm))
-data2 = np.zeros((ibkb, ntm))
+data1 = np.zeros((ibkb, int(ntm)))
+data2 = np.zeros((ibkb, int(ntm)))
 for it in range(tis, tie, tii):
 	it1 = (it - tis) / tii 
 	filename = foldername + "POST_U_2D2_" + "{:010d}".format(it) + "_0004.DAT"
@@ -154,14 +155,16 @@ for it in range(tis, tie, tii):
 	for k in range (kb1, kb2 + 1):
 		for i in range(ib1, ib2 + 1):
 			if it1 <= ntm - 1:
-				data1[dd, it1] = U[i,k] #data set from 1 to n-1
+				#print(it1, k, i)
+				data1[dd, int(it1)] = U[i,k] #data set from 1 to n-1
 			if it1 >= 1:
-				data2[dd, it1-1] = U[i,k] #data set at n
+				data2[dd, int(it1-1)] = U[i,k] #data set at n
 			dd = dd + 1
 
 svdu0, svds, svdw_ct0 =np.linalg.svd(data1, full_matrices=False) #singular value decomposition # the column of svdu is pod modes.
 svdu = np.zeros((ibkb,modenum))
-svdw_ct = np.zeros((modenum,ntm))
+print("modenum = " + str(modenum), "ntm = " + str(ntm))
+svdw_ct = np.zeros((modenum,int(ntm)))
 
 svdu = svdu0[:,:modenum]
 svdw_ct = svdw_ct0[:modenum,:]
@@ -185,12 +188,12 @@ sigma = np.real(logeval)/dt
 
 scaling_coeff_dmd = np.zeros((modenum), dtype = complex)
 scaled_phi = np.zeros((ibkb,modenum), dtype = complex)
-vandermonde_mat = np.zeros((modenum, ntm), dtype = complex)
-recon_dmd = np.zeros((ibkb,ntm), dtype = complex) #reconstruction flow field
+vandermonde_mat = np.zeros((modenum, int(ntm)), dtype = complex)
+recon_dmd = np.zeros((ibkb,int(ntm)), dtype = complex) #reconstruction flow field
 
 scaling_coeff_dmd = np.dot(np.linalg.pinv(phi[:,:modenum]),data1[:,0])
 scaling_coeff_mat = np.diag(scaling_coeff_dmd[:modenum])
-for it in range(ntm):
+for it in range(int(ntm)):
 	vandermonde_mat[:,it] = np.power(evalue[:],it, dtype = complex)
 recon_dmd = np.dot(phi, np.dot(scaling_coeff_mat, vandermonde_mat))
 for it in range(modenum):
@@ -212,7 +215,7 @@ f3.write("VARIABLES = X, Y, Recon_dmd, Original \n")
 f4.write("VARIABLES = time, ReconDmd_pos1, Original_pos1, ReconDmd_pos2, Original_pos2 \n")
 data4 = np.zeros((ibkb,4))
 data5 = np.zeros((ibkb,4))
-data6 = np.zeros((ntm,5))
+data6 = np.zeros((int(ntm),5))
 
 for it in range(modenum):
 	f2.write("ZONE T = '" + str(it) + "' I = " + str(ib2-ib1+1) + " J = " + str(kb2-kb1+1) + "\n" )
