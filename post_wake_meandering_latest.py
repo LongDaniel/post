@@ -1,8 +1,7 @@
-import sys
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import scipy as sp
+from scipy.fftpack import rfft, irfft 
 import os
 import tecplot_io as tec
 
@@ -46,8 +45,8 @@ def find_index(_z, _limits):
 			_i_min = i
 		if _z[i]>_limits2[1] and i<_i_max :
 			_i_max = i
-	#print('zlimits='+str(_limits))
-	#print('i_min='+str(_i_min)+', i_max='+str(_i_max))
+	print('zlimits='+str(_limits))
+	print('i_min='+str(_i_min)+', i_max='+str(_i_max))
 	
 	if isinstance(_limits, float):
 		return _i_min
@@ -56,16 +55,18 @@ def find_index(_z, _limits):
 
 def plot_bladeline (_ax, _xc, _yc, _r):
 	plt.sca(_ax)
-	_n = len(_xc)
-	for _i in range(_n):
-		plt.plot([_xc[_i], _xc[_i]], [_yc[_i]-_r, _yc[_i]+_r], 'k-', linewidth=2)
+	#_n = len(_xc)				#multiple turbines			
+	#for _i in range(_n):		#multiple turbines
+	#	plt.plot([_xc[_i], _xc[_i]], [_yc[_i]-_r, _yc[_i]+_r], 'k-', linewidth=2)		#multiple turbines
+	plt.plot([_xc, _xc], [_yc-_r, _yc+_r], 'k-', linewidth=2)
 	return
 
 def get_coord_range (_loc, _D):
 	_xc = _loc[0]
 	_yc = _loc[1]
+	#_xran = [_xc+0.2*_D, _xc+6.0*_D]		#multiple turbines
 	_xran = [_xc+0.2*_D, _xc+6.5*_D]
-	_yran = [_yc-2.0*_D, _yc+2.0*_D]
+	_yran = [_yc-3.0*_D, _yc+3.0*_D]
 	return _xran, _yran
 
 def get_index_range (_x, _y, _xran, _yran):
@@ -80,23 +81,23 @@ def get_index_range (_x, _y, _xran, _yran):
 
 def collect_timeseries(_ixran, _y_ts, _u, _y2):	
 	_iytemp = find_index(_y2, _y_ts)
-	_u2 = _u[_ixran[0]:(_ixran[1]+1),_iytemp]
+	_u2 = _u[_ixran[0]:(_ixran[1]),_iytemp]
 	return _u2	
 
-def identify_wake_core(_ixran, _iyran, _h, _x2, _y2, width=20, _method=1, _hw=6):
+def identify_wake_core(_ixran, _iyran, _h, _x2, _y2, width=24, _method=2, _hw=2):
 	_ix = []
 	_iy = []
 	_x = []
 	_y = []
 	print("ixran="+str(_ixran)+", iyran="+str(_iyran)+", iyran[0]="+str(_iyran[0]))
 	
-	_tempwidth = (_iyran[1] - _iyran[0])/2
+	_tempwidth = (_iyran[1] - _iyran[0])/6
 	_tempstart = _iyran[0] + (_iyran[1] - _iyran[0])/2 - _tempwidth/2	
 	_tempend = _tempstart + _tempwidth
 	
 	_utmp = np.zeros(_h.shape[1])
 	
-	for _i in range(_ixran[0], _ixran[1]+1):
+	for _i in range(_ixran[0], _ixran[1]):
 		#_ihmin = np.argmin(_h[_i, _iyran[0]:(_iyran[1]+1)])
 		#print("ihmin="+str(_ihmin))
 		#_itemp = _iyran[0] + _ihmin
@@ -117,11 +118,11 @@ def identify_wake_core(_ixran, _iyran, _h, _x2, _y2, width=20, _method=1, _hw=6)
 		## but it turns out to be easily limited to bottom or top edge of the search frame		
 		_itemp = _tempstart + _ihmin
 		print("ihmin="+str(_ihmin)+", itemp="+str(_itemp))
-		#_tempstart = _itemp - width/2
+		_tempstart = _itemp - width/2
 		
-		#_tempwidth = width
+		_tempwidth = width
 		
-		#_tempend = _itemp + width/2
+		_tempend = _itemp + width/2
 		if _tempstart < (_iyran[0]+_hw):
 			_tempstart = _iyran[0] + _hw	
 		if _tempend > (_iyran[1]-_hw):
@@ -234,6 +235,39 @@ def smooth(x,window_len=11,window='hanning'):
     _start = len(w)/2
     return y[int(_start):int(_start+len(x))]
 
+def find_nearest_index(array, value):
+    array = np.asarray(array)#convert to numpy array
+    idx = (np.abs(array - value)).argmin()
+    return idx
+
+def find_discontinuity_down(arr, grid,point_s):
+    s = set(arr)
+    arr2 = list(s)
+    arr2 = np.sort(arr2)
+    i = find_nearest_index(arr2, point_s)
+    while i > 0:
+        if (abs(arr2[i]-grid - arr2[i-1])>=1e-03):
+            return arr2[i]
+            break
+        i -= 1
+    if i == 0:
+        return arr2[i]
+
+def find_discontinuity_up(arr, grid,point_s):
+    s = set(arr)
+    arr2 = list(s)
+    arr2 = np.sort(arr2)
+    i = find_nearest_index(arr2, point_s)
+    while i < len(arr2) - 1:
+        if (abs(arr2[i]+grid - arr2[i+1])>=1e-03):
+            return arr2[i]
+            break
+        i += 1
+    if i == len(arr2)-1:
+        return arr2[i]
+
+
+
 # These are the "Tableau 20" colors as RGB.  
 tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120), 
              (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),  
@@ -254,14 +288,17 @@ uhub_o=9.4546
 zhub = 70.0
 r = 40.0
 D = 2.0*r
-PEX = 0.00280499344071
+#PEX = 0.00280499344071
+PEX = 0.0112199737628
 XL = 2.0*np.pi/PEX
 
 L0 = 1.0
 U0 = 11.5258407161
 T0 = L0/U0
 #dt = 0.342716489688*T0
-dt = 0.68543297937*T0
+#dt = 0.68543297937*T0
+dt = 0.3150659270689523 * T0
+dt = 0.30262189429331593 *T0
 ufric = 0.08442747 * U0
 
 nx = 192
@@ -269,10 +306,10 @@ ny = 192
 nz = 1
 nvar = 6
 
-casenames = ["Fixed_Turbine", "Pitch_Turbine", "SWAY_Turbine"]
+casenames = ["Single_V80", "Pitch_Turbine", "SWAY_Turbine"]
 
 #change working directory
-path  = 'd:/post/Project'
+path  = 'd:/post'
 os.chdir(path)
 
 caseprintnames = ["ONS", "OFX", "OFL"]
@@ -280,9 +317,9 @@ caseprintnames = ["ONS", "OFX", "OFL"]
 unametags = ["U", "UI", "UI"]
 
 icase = 0
-tis = 5000
-tie = 15000
-tii = 100
+tis = 150
+tie = 45000
+tii = 150
 foldername = "./"+casenames[icase]+"/POST_U_2D2_0002/"
 
 y_ts = -2.0/3.0*r
@@ -297,10 +334,10 @@ casename_e = 1
 #for icase in range(len(casenames)):
 for icase in range(casename_s, casename_e):
 	if icase==0:
-		tis = 5000
+		tis = 150
 		#tie = 240450+1
-		tie = 15000+1
-		tii = 100
+		tie = 4950+1
+		tii = 150
 	elif icase==1:
 		tis = 10000	
 		#tie = 240450+1
@@ -314,7 +351,7 @@ for icase in range(casename_s, casename_e):
 	else:
 		print("icase error.")
 
-	path  = 'd:/post/Project'
+	path  = 'd:/post'
 	os.chdir(path+'/'+casenames[icase])
 	print('Current directory: ' + os.getcwd())
 	foldername = path+"/"+casenames[icase]+"/POST_U_2D2_0002/"
@@ -324,10 +361,13 @@ for icase in range(casename_s, casename_e):
 
 	turbinefile = "Turbine.inp"
 	turbinedata = np.genfromtxt(turbinefile, skip_header=1)
-	turbineloc = turbinedata[:,3:5]
-	nturbine = len(turbineloc[:,0])
+	#turbineloc = turbinedata[:,3:5]		#Multiple turbines
+	turbineloc = turbinedata[3:5]			#Single turbine
+	#nturbine = len(turbineloc[:,0])
+	nturbine = len(turbineloc)
 
-	nepd = 384/8-4 # shift of tecplot grid
+	nepd = 192/8-4 # shift of tecplot grid(multiple turbines)
+	nepd = 192/2-4
 
 	# fig5 is used for plt the overlapped point cloud of all wake velocity minimas.
 	#allwakepoints
@@ -336,12 +376,25 @@ for icase in range(casename_s, casename_e):
 	xtmp2 = XL + xtmp1
 	ax5.plot([xtmp1, xtmp2, xtmp2, xtmp1, xtmp1], [0, 0, XL, XL, 0], 'k-') # draw the domain boundary
 	for iturb in range(nturbine):
-		xtmp, ytmp = get_coord_range(turbineloc[iturb,:], D)
+		#xtmp, ytmp = get_coord_range(turbineloc[iturb,:], D)		#multiple turbines
+		xtmp, ytmp = get_coord_range(turbineloc[:], D)
 		ax5.plot([xtmp[0], xtmp[1], xtmp[1], xtmp[0], xtmp[0]], [ytmp[0], ytmp[0], ytmp[1], ytmp[1], ytmp[0]], 'b--') # draw the search frame
-	plot_bladeline(ax5, turbineloc[:,0], turbineloc[:,1], r)
+	#plot_bladeline(ax5, turbineloc[:,0], turbineloc[:,1], r)
+	plot_bladeline(ax5, turbineloc[0], turbineloc[1], r)
+
+	fig6, ax6 = plt.subplots()
+	ax6.plot([xtmp1, xtmp2, xtmp2, xtmp1, xtmp1], [0, 0, XL, XL, 0], 'k-')  # draw the domain boundary
+	for iturb in range(nturbine):
+		#xtmp, ytmp = get_coord_range(turbineloc[iturb, :], D)		#multiple turbines
+		xtmp, ytmp = get_coord_range(turbineloc[:], D)
+		ax6.plot([xtmp[0], xtmp[1], xtmp[1], xtmp[0], xtmp[0]], [ytmp[0], ytmp[0], ytmp[1], ytmp[1], ytmp[0]], 'b--')  # draw the search frame
+	#plot_bladeline(ax6, turbineloc[:, 0], turbineloc[:, 1], r)		#multiple turbines
+	plot_bladeline(ax6, turbineloc[0], turbineloc[1], r)
 
 	# allmin 
 	allmins = []
+	#allwake = np.empty([nturbine,41,3])		#multiple turbines(no need to activate anymore. Because we already declared it.)
+	#allwake = np.empty([nturbine,195,3])	
 	for iturb in range(nturbine):
 		allmins.append(list())
 
@@ -357,23 +410,23 @@ for icase in range(casename_s, casename_e):
 		Y = data0[:,:,1].reshape([ny,nx]).transpose()
 		U = data0[:,:,3].reshape([ny,nx]).transpose()
 
-		#um = np.average(U)
-		#print("um="+str(um))
-		um=0.907800731501
+		um = np.average(U)
+		print("um="+str(um))
+		#um=0.907800731501
 		U1 = U / um
 		x1 = X[:,0]
 		y1 = Y[0,:]
 		
-		U2 = expand_domain(U1, nepd, shift=0)
-		X2 = expand_domain(X, nepd, mode=1, shift=0)
-		Y2 = expand_domain(Y, nepd, shift=0)
+		U2 = expand_domain(U1, nepd, shift=1)
+		X2 = expand_domain(X, nepd, mode=1, shift=1)
+		Y2 = expand_domain(Y, nepd, shift=1)
 		x2 = X2[:,0]
 		y2 = Y2[0,:]
-		print("x2.min="+str(x2.min()))
 		
 		#print(turbineloc)
 
-		nturbine = len(turbineloc[:,0])
+		#nturbine = len(turbineloc[:,0])		#multiple turbines
+		nturbine = len(turbineloc)
 		xran = np.zeros((nturbine,2))
 		yran = np.zeros((nturbine,2))
 		ixran = np.zeros((nturbine,2), dtype='int')
@@ -382,12 +435,14 @@ for icase in range(casename_s, casename_e):
 		ywake = []
 		ywpo = [] # original location of velocity minima
 		ywp = [] # spacial smoothed location of velocity minima
+		y_filter = [] # spacial smoothed location of velocity minima by using low pass filter
 		yfft = []
 		yfftm = []
 		u_ts = []
 		
 		for iturb in range(nturbine):
-			xran[iturb,:], yran[iturb,:] = get_coord_range(turbineloc[iturb,:], D)
+			#xran[iturb,:], yran[iturb,:] = get_coord_range(turbineloc[iturb,:], D)		#multiple turbines
+			xran[iturb,:], yran[iturb,:] = get_coord_range(turbineloc[:], D)
 			ixran[iturb,:], iyran[iturb,:] = get_index_range(x2, y2, xran[iturb,:], yran[iturb,:])
 			
 			y2_ts = (yran[iturb,0] + yran[iturb,1])/2.0 + y_ts
@@ -411,14 +466,29 @@ for icase in range(casename_s, casename_e):
 			np_tmp[:,1] = ytemp
 			allmins[iturb].append(np_tmp)
 			
-			ytemp = smooth(ytemp)
+			ytemp1 = smooth(ytemp)
 			#print("after smooth: len="+str(len(ytemp)))
 			#print(ytemp)
-			ywp.append(ytemp)
+			ywp.append(ytemp1)
 			#print("iturb="+str(iturb))
 			#print(np.array(ixtemp))
 			#print(np.array(iytemp))
 			#print(np.vstack((np.array(ixtemp), np.array(iytemp))))
+
+			#The following script will coduct low pass filter
+			f_signal = rfft(ytemp)
+			#w = fftfreq(f_signal.size, d = 1/(x2[1]-x2[0]))
+			w = 2.0*np.pi/(x2[1]-x2[0]) * np.arange(len(f_signal))
+			#w = 1/(x2[1]-x2[0]) * np.arange(len(f_signal))
+			#print('w ='+str(w))
+			#print("f[0] =" + str(f_signal))
+
+			cut_f_signal = f_signal.copy()
+			cut_f_signal[w>2.5] = 0
+			#print("cut_f[0] = " +str(cut_f_signal))
+			cut_signal = irfft(cut_f_signal)
+			#end here
+			y_filter.append(cut_signal)
 			
 			#p_temp = np.abs(np.fft.fft(ytemp-np.average(ytemp)))
 			#yfft.append(p_temp)	
@@ -472,17 +542,20 @@ for icase in range(casename_s, casename_e):
 		cbar = plt.colorbar(ax1)
 		plt.text(1200, -150, "$tu_*/H="+"{:.3f}".format(it * dt * ufric / hbar)+"$")
 
-		plot_bladeline(ax, turbineloc[:,0], turbineloc[:,1], r)
+		#plot_bladeline(ax, turbineloc[:,0], turbineloc[:,1], r)		#multiple turbines
+		plot_bladeline(ax, turbineloc[0], turbineloc[1], r)
 
 		for iturb in range(nturbine):
 			xran2 = x2[ixran[iturb,:]]
 			yran2 = y2[iyran[iturb,:]]
 			plt.plot([xran2[0],xran2[1],xran2[1],xran2[0],xran2[0]],[yran2[0],yran2[0],yran2[1],yran2[1],yran2[0]],'b--')
 			plt.plot(xwake[iturb], ywake[iturb], 'o', color=tableau20[2])
-			plt.plot(xwake[iturb], ywp[iturb], 'k-', linewidth=3, alpha=0.5)
+			#plt.plot(xwake[iturb], ywp[iturb], 'k-', linewidth=3, alpha=0.5)
+			plt.plot(xwake[iturb], y_filter[iturb], 'k-', linewidth=3, alpha=0.5)
 			
 			plt.figure(fig5.number)
 			ax5.plot(xwake[iturb], ywake[iturb], '.', color=tableau20[1], alpha=0.5)
+			ax6.plot(xwake[iturb], ywake[iturb], '.', color=tableau20[1], alpha=0.5)
 			
 			plt.figure(fig.number)
 
@@ -511,20 +584,20 @@ for icase in range(casename_s, casename_e):
 	#plt.ylim([y2.min(), y2.max()])	
 	plt.close()
 
-#	yfftm2 = yfftm2 / (len(range(tis, tie, tii)))
-#	yfftm3.append(yfftm2)
-#	fig3 = plt.figure()
-#	ax3 = fig3.add_subplot(1,1,1)
-#	plt.plot(xfft, yfftm2)
-#	plt.xscale('log')
-#	plt.yscale('log')
-#	plt.ylim([1,1e4])
-#	plt.xlabel('$k$')
-#	plt.ylabel(r'$S_y$')
-#	plt.savefig(foldername+"wake_spectrum.png")
-#	plt.close()
+	#yfftm2 = yfftm2 / (len(range(tis, tie, tii)))
+	#yfftm3.append(yfftm2)
+	#fig3 = plt.figure()
+	#ax3 = fig3.add_subplot(1,1,1)
+	#plt.plot(xfft, yfftm2)
+	#plt.xscale('log')
+	#plt.yscale('log')
+	#plt.ylim([1,1e4])
+	#plt.xlabel('$k$')
+	#plt.ylabel(r'$S_y$')
+	#plt.savefig(foldername+"wake_spectrum.png")
+	#plt.close()
 
-#	np.savetxt(foldername+"wave_spectrum.dat", np.vstack((xfft, yfftm2)))
+	#np.savetxt(foldername+"wave_spectrum.dat", np.vstack((xfft, yfftm2)))
 
 	#u_ts3.append(u_ts2)
 	lentemp = np.empty(nturbine, dtype='int')
@@ -544,13 +617,37 @@ for icase in range(casename_s, casename_e):
 
 	## save the wake_velocity_minima locations:
 	wkp_all = np.empty((nturbine, tlen, xlen, 2))
+	allwake = np.empty([nturbine, xlen,3])
+	grid_size = y2[1]-y2[0]                         #uniform grid
+	coeff_list = []	
 	for i in range(nturbine):
 		for j in range(tlen):
 			wkp_all[i, j, :, :] = allmins[i][j][0:xlen,:]
+		for k in range(xlen):
+			allwake[i, k, 0] = np.max(wkp_all[i, :, k, 0])
+			#allwake[i, k, 1] = find_discontinuity_up(wkp_all[i, :, k, 1], grid_size, turbineloc[i, 1]) #return the upper discontinous element (multiple turbines)
+			#allwake[i, k, 2] = find_discontinuity_down(wkp_all[i, :, k, 1], grid_size, turbineloc[i, 1]) # return the upper discontinous element(multiple turbines)
+			allwake[i, k, 1] = find_discontinuity_up(wkp_all[i, :, k, 1], grid_size, turbineloc[1]) #return the upper discontinous element (multiple turbines)
+			allwake[i, k, 2] = find_discontinuity_down(wkp_all[i, :, k, 1], grid_size, turbineloc[1]) # return the upper discontinous element(multiple turbines)
+        #print(allwake[:, :, 1])
+		coef1 = np.polyfit(allwake[i, :, 0], allwake[i, :, 1], 1)
+		coef2 = np.polyfit(allwake[i, :, 0], allwake[i, :, 2], 1)
+		coeff_list.append(coef1)
+		coeff_list.append(coef2)
+		poly1d_fn = np.poly1d(coef1)
+		poly2d_fn = np.poly1d(coef2)
+		plt.figure(fig6.number)
+		ax6.plot(allwake[i, :, 0], allwake[i, :, 1], '.', color="blue", alpha=1.0)
+		ax6.plot(allwake[i, :, 0], allwake[i, :, 2], '.', color="blue", alpha=1.0)
+		ax6.plot(allwake[i, :, 0], poly1d_fn(allwake[i, :, 0]),'k-', linewidth=3, alpha=0.5)
+		ax6.plot(allwake[i, :, 0], poly2d_fn(allwake[i, :, 0]),'k-', linewidth=3, alpha=0.5)		
 	np.savez(foldername+"wake_minima_points.npz", wkp_all=wkp_all)
 	wkp_all = []
-		
-	
+
+	plt.xlim([x2.min(), x2.max()])
+	plt.ylim([y2.min(), y2.max()])	
+	plt.figure(fig6.number)
+	plt.savefig(foldername + "wakemax.png")	
 			
 	
 #fig4 = plt.figure()
